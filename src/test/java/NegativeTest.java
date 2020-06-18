@@ -10,15 +10,16 @@ import static org.hamcrest.Matchers.*;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
 import io.qameta.allure.*;
 import io.qameta.allure.junit4.DisplayName;
-public class PositiveTest {
+import java.util.List;
+public class NegativeTest {
     @DataProvider(name = "newUserData")
     public Object[] newUserData() {
         User[] res = new User[1];
         res[0] = new User(
-                "Kristina",
-                "Verenich",
+                "",
+                "",
                 "k.verenitch@mail.ru",
-                "101010",
+                "111111",
                 7,
                 "December",
                 1999,
@@ -31,14 +32,15 @@ public class PositiveTest {
         );
         return res;
     }
-    //@Severity(value = SeverityLevel.CRITICAL)
-    //@DisplayName("Регистрация")
-    //@Description("Тестирование позитивного сценария регистрации пользователя")
+    @Severity(value = SeverityLevel.CRITICAL)
+    @DisplayName("Регистрация без имени и фамилии")
+    @Description("Тестирование негативного сценария регистрации пользователя")
     @Test(dataProvider = "newUserData")
     public void mainTest(User user) {
-        WebElement signInLink, input, nameLabel;
+        WebElement signInLink, input;
+        List errors;
         System.setProperty("webdriver.chrome.driver",
-                "C:/users/kvere/AppData/Local/Google/Chrome/chromedriver.exe");
+                "C:/Users/shoumen/AppData/Local/Google/Chrome/Application/chromedriver.exe");
         WebDriver driver = new ChromeDriver();
         // Открываем сайт
         driver.get("http://automationpractice.com/");
@@ -99,11 +101,16 @@ public class PositiveTest {
         input.sendKeys(user.phoneNumber);
         // Регистрируемся
         driver.findElement(By.id("submitAccount")).click();
-        // Дожидаемся, пока страница загрузится, и смотрим на содержимое ссылки в аккаунт.
-        //Оно должно быть равно firstname + " " + lastname
-        nameLabel = (new WebDriverWait(driver,
-                10)).until(presenceOfElementLocated(By.cssSelector("a.account > span")));
-        assertThat(nameLabel.getText(), equalTo(user.firstName + " " + user.lastName));
+        // Ждём, пока не появятся ошибки
+        (new WebDriverWait(driver,
+                10)).until(presenceOfElementLocated(By.cssSelector(".alert.alert-danger")));
+        errors = driver.findElements(By.cssSelector(".alert.alert-danger li b"));
+        // Отсутствующие поля
+        String[] missingFields = {"lastname", "firstname"};
+        // Проверяем, если ли они в списке ошибок
+        for(Object err : errors) {
+            assertThat(missingFields, hasItemInArray(((WebElement) err).getText()));
+        }
         driver.quit();
     }
 }
